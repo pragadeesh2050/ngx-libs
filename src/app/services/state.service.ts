@@ -1,8 +1,8 @@
 import { PlatformLocation } from '@angular/common';
 import { computed, effect, inject, Injectable, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { LIBRARY_SUPPORT_DATA } from './libs.data';
-import { getAllAngularVersionsFromLibrarySupportData } from './utils';
+import { LIBRARY_SUPPORT_DATA } from '../libs.data';
+import { getAllAngularVersionsFromLibrarySupportData } from '../utils';
 
 type SearchQueryParams = {
   search?: string;
@@ -23,16 +23,22 @@ export class StateService {
   data = signal(LIBRARY_SUPPORT_DATA);
 
   filteredData = computed(() => {
-    const searchFilter = this.searchFilter();
+    const searchFilter = this.searchFilter(); // ngx-toastr, ngx-clipboard, etc.
     const data = this.data();
 
     if (!searchFilter) return data;
 
+    const searchFilterSplit = searchFilter
+      .split(',') // split by comma
+      .filter((x) => x.trim().length > 0); // remove empty strings
+
     return data
       .filter((lib) => {
-        return lib.name.toLowerCase().includes(searchFilter.toLowerCase());
+        return searchFilterSplit.some((searchFilter) => {
+          return lib.name.toLowerCase().includes(searchFilter.toLowerCase());
+        });
       })
-      .slice(0, 30); // always limit to 30 results
+      .slice(0, 40); // always limit to 40 results
   });
 
   platformLocation = inject(PlatformLocation);
@@ -79,5 +85,14 @@ export class StateService {
       }
       this.router.navigate([], { queryParams, replaceUrl: true });
     });
+  }
+
+  /**
+   *
+   * @param index of item
+   * @param item
+   */
+  public trackItems<T>(index: number, item: T): number {
+    return index;
   }
 }

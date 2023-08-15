@@ -11,13 +11,13 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import type { LibraryAngularVersionSupport } from 'libs/models';
 import { ReplaceStringPipe } from './replace-string.pipe';
-import { StateService } from './state.service';
+import { StateService } from './services/state.service';
 
 @Component({
   selector: 'app-support-grid',
   template: `
     <div class="cards-grid">
-      <mat-card *ngFor="let lib of cardData()">
+      <mat-card *ngFor="let lib of cardData(); trackBy: state.trackItems">
         <mat-card-header>
           <mat-card-title>{{ lib.name }}</mat-card-title>
           <mat-card-subtitle>
@@ -46,7 +46,9 @@ import { StateService } from './state.service';
               <th>Support</th>
               <th>Library Version</th>
             </tr>
-            <tr *ngFor="let item of lib.versionSupport">
+            <tr
+              *ngFor="let item of lib.versionSupport; trackBy: state.trackItems"
+            >
               <td>v{{ item.angularVersion }}</td>
               <td>
                 <ng-container *ngIf="item.support === true">✅</ng-container>

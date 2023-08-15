@@ -2,8 +2,8 @@ import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  effect,
   inject,
-  OnInit,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
@@ -12,8 +12,8 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { debounceTime } from 'rxjs';
-import { StateService } from './state.service';
+import { debounceTime, distinctUntilChanged } from 'rxjs';
+import { StateService } from './services/state.service';
 
 @Component({
   selector: 'app-search',
@@ -33,7 +33,10 @@ import { StateService } from './state.service';
         <mat-label>Angular Versions</mat-label>
         <mat-select [formControl]="versionsControl" multiple>
           <mat-option
-            *ngFor="let version of state.allAngularVersions"
+            *ngFor="
+              let version of state.allAngularVersions;
+              trackBy: state.trackItems
+            "
             [value]="version"
           >
             v{{ version }}
@@ -49,11 +52,13 @@ import { StateService } from './state.service';
         grid-template-columns: repeat(4, 1fr);
         grid-gap: 8px;
       }
+
       @media (max-width: 1024px) {
         .search-container {
           grid-template-columns: repeat(2, 1fr);
         }
       }
+
       @media (max-width: 640px) {
         .search-container {
           grid-template-columns: 1fr;
@@ -74,7 +79,7 @@ import { StateService } from './state.service';
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class SearchComponent implements OnInit {
+export class SearchComponent {
   state = inject(StateService);
 
   searchControl = new FormControl<string>('', { nonNullable: true });
@@ -90,13 +95,12 @@ export class SearchComponent implements OnInit {
       });
 
     this.searchControl.valueChanges
-      .pipe(takeUntilDestroyed(), debounceTime(200))
+      .pipe(takeUntilDestroyed(), debounceTime(200), distinctUntilChanged())
       .subscribe((value) => {
         this.state.searchFilter.set(value);
       });
-  }
 
-  ngOnInit() {
-    this.searchControl.setValue(this.state.searchFilter());
+    // update the search input value on state change
+    effect(() => this.searchControl.setValue(this.state.searchFilter()));
   }
 }
